@@ -1,0 +1,453 @@
+{
+  "name": "Fluxo_Auditoria_V4_Cerebro",
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "job_id"
+            },
+            {
+              "name": "parlamentar_selecionado"
+            },
+            {
+              "name": "mensagem_usuario"
+            },
+            {
+              "name": "session_id"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -432,
+        0
+      ],
+      "id": "75ab8d6b-9c80-4c9b-aa46-c639c3484c53",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-2.5-flash",
+          "mode": "list",
+          "cachedResultName": "models/gemini-2.5-flash"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=Pergunta do Cidadão:\n{{ $('When Executed by Another Workflow').item.json.mensagem_usuario }}\n\n=== BASE DE DADOS FINANCEIRA (CSV) ===\nTotal de registros: {{ $('Limpar Dados').first().json.total_linhas_dinamico }}\n{{ $('Limpar Dados').first().json.dados_csv }}\n\n{{ $json.texto_noticias_limpas }}"
+            }
+          ]
+        },
+        "jsonOutput": true,
+        "builtInTools": {},
+        "options": {
+          "systemMessage": "=Você é um Auditor Sênior de Contas Públicas brasileiro e Jornalista de Dados investigativo. \nSua missão é analisar uma base financeira (CSV) e o contexto político atual (Notícias), respondendo ao cidadão de forma analítica, neutra e com linguagem clara.\n\n--- DICIONÁRIO DE DADOS FINANCEIROS (CSV) ---\n- data: Dia do registro da proposta da emenda.\n- valor: Montante financeiro do repasse.\n- nome_parlamentar: O parlamentar dono da emenda.\n- entidade_recebedora: Nome real de quem recebe o dinheiro (Prefeituras, ONGs, Fundações).\n- municipio: Cidade de destino dos recursos.\n- objeto: Justificativa ou finalidade do dinheiro (ex: asfalto, saúde).\n- partido: Sigla partidária do parlamentar.\n- orgao_superior: O Ministério ou órgão do Governo Federal que vai liberar o recurso.\n- natureza_juridica: O tipo legal de quem está recebendo o dinheiro (ex: Administração Pública, Associação Privada).\n\n--- REGRAS DE OURO DA AUDITORIA ---\n1. ALUCINAÇÃO ZERO: Use a matemática do CSV para 100% das afirmações financeiras. Formate em Reais (R$ X.XXX.XXX,XX).\n2. VALORES NULOS: O termo \"null\" no CSV significa \"Não informado pelo Governo\". NUNCA escreva a palavra \"null\" na resposta final.\n3. REPASSES NÃO INFORMADOS (PIX/RELATOR): Valores sem entidade clara representam ausência de detalhamento oficial (erros burocráticos ou emendas genéricas). Ao citar este montante, seja NEUTRO: indique o valor sem recebedor claro. PROIBIÇÃO: Jamais acuse \"falta de transparência\" ou use tons restritivos.\n4. CRUZAMENTO: Cruze os gastos do CSV com a pauta política recente vista nas notícias. Use as colunas de \"orgao_superior\" e \"natureza_juridica\" para aprofundar sua análise de coerência.\n5. SÍNTESE: JAMAIS liste emendas uma a uma. Entregue resumos e destaque o Top 3.\n\n--- REGRA DE SEGURANÇA (GUARDRAIL) ---\nSe a pergunta não tiver relação com política ou dados públicos, cancele a análise indicando fuga de escopo.\n\n--- SCHEMA DE SAÍDA (ESTRITAMENTE JSON) ---\nObrigatório retornar todas as 5 chaves abaixo em um JSON válido cru (sem blocos markdown ```json).\n\n{\n  \"output\": \"Mensagem de confirmação.\",\n  \"perfil\": \"**Parlamentar:** [nome_parlamentar]\\n\\n**Partido:** [partido]\\n\\n**Perfil de Atuação:** [1 frase baseada no contexto das notícias]\\n\\n**Resumo Executivo:** [Resumo matemático: valor total e quantidade de emendas].\",\n  \"dossie\": \"Máximo de 3 parágrafos. 1º: Resposta direta. 2º: Top 3 recebedores em negrito. 3º: Cruzamento analítico dos gastos com as notícias e menção a dados não informados (se existirem).\",\n  \"fontes\": \"STRING ÚNICA com quebras de linha duplas (\\\\n\\\\n) entre os itens. Inicie com: '- **Base Oficial**: Portal da Transparência'. Para notícias, é OBRIGATÓRIO E INEGOCIÁVEL usar colchetes [ ] ao redor do título para formar o Hyperlink. Formato estrito: '- **[Veículo]**: [Título da Notícia](URL)'. A ausência dos colchetes quebra o sistema.\",\n  \"nivel_alerta\": \"ESTA CHAVE É OBRIGATÓRIA. Retorne APENAS UMA destas palavras: Anomalia, Insight ou Monitorando\"\n}",
+          "temperature": "={{ 0 }}",
+          "thinkingBudget": 0
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1.2,
+      "position": [
+        544,
+        -288
+      ],
+      "id": "fb0ee8d4-95eb-45fd-b3d0-fe4f2eb1def3",
+      "name": "Message a model",
+      "retryOnFail": true,
+      "waitBetweenTries": 2000,
+      "maxTries": 3,
+      "credentials": {
+        "googlePalmApi": {
+          "id": "FmHd1AglYU1v8KWF",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      },
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "returnAll": true
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        288,
+        -288
+      ],
+      "id": "9ea60860-8867-41da-a1ea-7067400d11bf",
+      "name": "Get many rows1",
+      "credentials": {
+        "supabaseApi": {
+          "id": "sA5uBrlH8qdKXmTA",
+          "name": "Supabase account"
+        }
+      },
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const itens = $input.all();\nif (itens.length === 0) return [{ json: { status: \"sem_dados\", mensagem: \"Nenhuma emenda localizada.\" } }];\n\nconst emendas = itens.map(item => item.json);\nlet lista_enxuta = [];\n\n// 1. Limpeza mantendo a granularidade máxima\nfor (const emenda of emendas) {\n  lista_enxuta.push({\n    data: emenda.DIA_PROPOSTA || \"NAO_INFORMADO\",\n    valor: parseFloat(emenda.VALOR_REPASSE_PROPOSTA_EMENDA) || 0,\n    nome_parlamentar: emenda.NOME_PARLAMENTAR || \"NAO_INFORMADO\",\n    tipo_parlamentar: emenda.TIPO_PARLAMENTAR || \"NAO_INFORMADO\", // <-- COLUNA INSERIDA AQUI\n    entidade_recebedora: emenda.NM_PROPONENTE || \"NAO_INFORMADO\",\n    municipio: emenda.MUNIC_PROPONENTE || \"NAO_INFORMADO\",\n    objeto: emenda.OBJETO_PROPOSTA || \"NAO_INFORMADO\",\n    partido: emenda.Partido || \"NAO_INFORMADO\",\n    orgao_superior: emenda.DESC_ORGAO_SUP || \"NAO_INFORMADO\",\n    natureza_juridica: emenda.NATUREZA_JURIDICA || \"NAO_INFORMADO\"\n  });\n}\n\n// 2. Conversão Dinâmica para CSV (Otimizada para Sandbox do n8n)\nconst chaves = Object.keys(lista_enxuta[0]);\nlet csv_final = chaves.join(',') + '\\n';\n\n// Uso do laço 'for' clássico para evitar estouro de memória no isolated-vm\nfor (let i = 0; i < lista_enxuta.length; i++) {\n    let linha = lista_enxuta[i];\n    let linhaArray = [];\n\n    for (let j = 0; j < chaves.length; j++) {\n        let valor = linha[chaves[j]];\n        \n        // Verifica se é string e escapa vírgulas (usando indexOf por ser mais rápido)\n        if (typeof valor === 'string' && valor.indexOf(',') !== -1) {\n            valor = `\"${valor}\"`;\n        }\n        linhaArray.push(valor);\n    }\n    \n    csv_final += linhaArray.join(',');\n    \n    // Adiciona quebra de linha exceto no último registro\n    if (i < lista_enxuta.length - 1) {\n        csv_final += '\\n';\n    }\n}\n\n// 3. Retorna o CSV e a contagem dinâmica\nreturn [{\n    json: {\n        total_linhas_dinamico: lista_enxuta.length,\n        dados_csv: csv_final\n    }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -16,
+        0
+      ],
+      "id": "67380d2c-dfa1-4661-a27a-021bf9ecee5c",
+      "name": "Limpar Dados"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "biblia_emendas",
+        "returnAll": true,
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "NOME_PARLAMENTAR",
+              "condition": "eq",
+              "keyValue": "={{ $json.parlamentar_selecionado }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -224,
+        0
+      ],
+      "id": "8aae08b5-817f-4ae7-ac50-1c1725509141",
+      "name": "Puxar Emendas",
+      "credentials": {
+        "supabaseApi": {
+          "id": "sA5uBrlH8qdKXmTA",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "let rawData = $input.item.json.output || $input.item.json.text;\n\n// 1. Puxa o texto bruto das notícias\nlet rawNoticias = $('Formatar Notícias').first().json.texto_noticias_limpas || \"\";\n\n// 2. Constrói o cabeçalho obrigatório\nlet fontesFormatadas = \"- **Base Oficial**: Portal da Transparência\\n\\n\";\n\n// 3. Limpa o título do bloco bruto\nlet cleanNoticias = rawNoticias.replace(/=== NOTÍCIAS RECENTES \\(CONTEXTO\\) ===/g, \"\").trim();\n\n// 4. Se tiver notícias, formata elegantemente para Markdown (Link clicável)\nif (cleanNoticias.length > 0) {\n    let blocos = cleanNoticias.split(/\\[\\d+\\] /).filter(b => b.trim() !== \"\");\n\n    blocos.forEach(bloco => {\n        let partes = bloco.split(/\\\\nLink: |\\nLink: /);\n        if(partes.length === 2) {\n            let tituloBruto = partes[0].replace(\"Título: \", \"\").replace(/\\\\n/g, \"\").replace(/\\n/g, \"\").trim();\n            let link = partes[1].replace(/\\\\n/g, \"\").replace(/\\n/g, \"\").trim();\n\n            let pedacos = tituloBruto.split(\" - \");\n            let portal = \"Notícia\";\n            let tituloFinal = tituloBruto;\n\n            if (pedacos.length > 1) {\n                portal = pedacos.pop().trim();\n                tituloFinal = pedacos.join(\" - \").trim();\n            }\n\n            fontesFormatadas += `- **${portal}:** [${tituloFinal}](${link})\\n\\n`;\n        }\n    });\n}\n\n// Retorno de Segurança do JSON Automático\nif (typeof rawData === 'object' && rawData !== null) {\n    rawData.fontes = fontesFormatadas;\n    return rawData;\n}\n\nlet rawResponse = String(rawData || \"\");\n\n// BLINDAGEM NUCLEAR: Usando Hexadecimal (\\x60) para a crase. O motor do n8n não quebra mais.\nlet cleanText = rawResponse.replace(/\\x60\\x60\\x60json/gi, \"\").replace(/\\x60\\x60\\x60/g, \"\").trim();\ncleanText = cleanText.replace(/\\n/g, \"\\\\n\").replace(/\\r/g, \"\");\n\nlet parsedResult = {};\n\ntry {\n    parsedResult = JSON.parse(cleanText);\n} catch (erro) {\n    // Plano B de Extração\n    let extract = function(key) {\n        let prefix = '\"' + key + '\"';\n        let idx = cleanText.indexOf(prefix);\n        if (idx === -1) return \"\";\n\n        let startVal = cleanText.indexOf('\"', idx + prefix.length);\n        if (startVal === -1) return \"\";\n        startVal += 1;\n\n        let endVal1 = cleanText.indexOf('\",', startVal);\n        let endVal2 = cleanText.indexOf('\"}', startVal);\n        let endVal = -1;\n\n        if (endVal1 !== -1 && endVal2 !== -1) {\n            endVal = Math.min(endVal1, endVal2);\n        } else if (endVal1 !== -1) {\n            endVal = endVal1;\n        } else if (endVal2 !== -1) {\n            endVal = endVal2;\n        } else {\n            endVal = cleanText.length;\n        }\n\n        let result = cleanText.substring(startVal, endVal);\n        if (result.endsWith('\"')) {\n            result = result.substring(0, result.length - 1);\n        }\n        return result;\n    };\n\n    parsedResult = {\n        output: extract(\"output\") || \"Análise processada.\",\n        perfil: extract(\"perfil\") || \"**Aviso:** Erro de formatação no envio, mas a análise foi feita.\",\n        dossie: extract(\"dossie\") || \"A análise foi interrompida pelo limite de tokens da IA. Tente fazer uma pergunta mais específica.\", \n        nivel_alerta: extract(\"nivel_alerta\") || \"Monitorando\"\n    };\n}\n\nreturn {\n    output: (parsedResult.output || \"\").replace(/\\\\n/g, '\\n'),\n    perfil: (parsedResult.perfil || \"\").replace(/\\\\n/g, '\\n'),\n    dossie: (parsedResult.dossie || \"\").replace(/\\\\n/g, '\\n'),\n    fontes: fontesFormatadas,\n    nivel_alerta: parsedResult.nivel_alerta || \"Monitorando\"\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        800,
+        0
+      ],
+      "id": "1c2f7d17-8395-447a-b544-f47498ef238e",
+      "name": "Descascador"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "auditoria_jobs",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "job_id",
+              "condition": "eq",
+              "keyValue": "={{ $('When Executed by Another Workflow').item.json.job_id }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "resultado_ia",
+              "fieldValue": "={{ $json }}"
+            },
+            {
+              "fieldId": "status",
+              "fieldValue": "concluido"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        976,
+        0
+      ],
+      "id": "672826f0-1ffa-4b34-a23b-e1e4d029462e",
+      "name": "Avisar Lovable (Status: Concluído)",
+      "credentials": {
+        "supabaseApi": {
+          "id": "sA5uBrlH8qdKXmTA",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "=https://news.google.com/rss/search?q={{ encodeURI('\"' + $('When Executed by Another Workflow').item.json.parlamentar_selecionado + '\"') }}&hl=pt-BR&gl=BR",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1.2,
+      "position": [
+        -320,
+        256
+      ],
+      "id": "dcbeb289-c45b-4dfa-ab18-c4602c77d502",
+      "name": "RSS Read"
+    },
+    {
+      "parameters": {
+        "maxItems": 10
+      },
+      "type": "n8n-nodes-base.limit",
+      "typeVersion": 1,
+      "position": [
+        -128,
+        256
+      ],
+      "id": "63b4ade2-d03d-460f-8121-371c620eca51",
+      "name": "Limit"
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "destinationFieldName": "noticias",
+        "include": "specifiedFields",
+        "fieldsToInclude": "title, link",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        48,
+        256
+      ],
+      "id": "71685c3f-75c8-422b-a19d-0cf99d8ce2dc",
+      "name": "Aggregate"
+    },
+    {
+      "parameters": {
+        "jsCode": "// 1. Puxa a lista de notícias do nó Aggregate\nconst noticias_array = $input.first().json.noticias;\n\n// 2. Cria um bloco de texto limpo para a IA ler\nlet texto_noticias = \"=== NOTÍCIAS RECENTES (CONTEXTO) ===\\n\";\n\nif (!noticias_array || noticias_array.length === 0) {\n    texto_noticias += \"Nenhuma notícia recente encontrada para este parlamentar sobre emendas.\\n\";\n} else {\n    noticias_array.forEach((n, index) => {\n        texto_noticias += `[${index + 1}] Título: ${n.title}\\nLink: ${n.link}\\n\\n`;\n    });\n}\n\n// 3. Devolve esse bloco de texto pronto\nreturn [{ json: { texto_noticias_limpas: texto_noticias } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        256,
+        0
+      ],
+      "id": "0308ff4e-b788-4519-a8f8-fca16015f0fc",
+      "name": "Formatar Notícias"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Pergunta do Cidadão:\n{{ $('When Executed by Another Workflow').item.json.mensagem_usuario }}\n\n=== BASE DE DADOS FINANCEIRA (CSV) ===\nTotal de registros: {{ $('Limpar Dados').first().json.total_linhas_dinamico }}\n{{ $('Limpar Dados').first().json.dados_csv }}\n\n=== NOTÍCIAS RECENTES (CONTEXTO) ===\n{{ $json.texto_noticias_limpas }}",
+        "options": {
+          "systemMessage": "Você é um Auditor Sênior de Contas Públicas. \nSua missão é analisar dados financeiros (CSV) e contexto político (Notícias) com neutralidade e clareza. Use linguagem cidadã, direta, sucinta e acessível.\n\n--- DICIONÁRIO DE DADOS (CSV) ---\n- data: Dia do registro da proposta da emenda.\n- valor: Montante financeiro do repasse.\n- nome_parlamentar: O parlamentar dono da emenda.\n- tipo_parlamentar: Calssificação do perfil da emenda, se é \"individual\" de \"Bancada\" de \"Comissao\" ou do \"Relator Geral\".\n- entidade_recebedora: Nome real de quem recebe o dinheiro.\n- municipio: Cidade de destino dos recursos.\n- objeto: Justificativa ou finalidade do dinheiro.\n- partido: Sigla partidária do parlamentar.\n- orgao_superior: Órgão do Governo Federal que libera o recurso.\n- natureza_juridica: O tipo legal de quem está recebendo o dinheiro.\n\n--- REGRAS DE OURO ---\n1. ALUCINAÇÃO ZERO: Baseie-se apenas no CSV. Valores em R$ X.XXX.XXX,XX.\n2. VALORES NULOS: \"null\" significa \"Não informado\". Nunca escreva \"null\".\n3. REPASSES NÃO INFORMADOS: Seja neutro. Indique o valor sem recebedor.\n4. SÍNTESE EXTREMA: \n   - PERFIL DE ATUAÇÃO: Apenas o rótulo político (Ex: Esquerda Progressista). Sem descrições.\n   - RESUMO EXECUTIVO: Máximo 1 frase curta e direta (Ex: R$ XX mil em X emendas para [Áreas]).\n   - DOSSIÊ: Máximo 2 parágrafos curtos. Foque em: \"Quanto\", \"Para quem\" e \"Para quê\". Sem introduções como \"A análise revela...\". Destaque recebedores em NEGRITO.\n5. OBJETIVIDADE: Priorize dados. Elimine conectivos e floreios.\n\n--- SEGURANÇA E FORMATAÇÃO ---\n- GUARDRAIL: Se a pergunta não for sobre política ou dados públicos, cancele a análise.\n- JSON PURO: Retorne APENAS um objeto JSON válido. Sem markdown, sem blocos ```json.\n\n--- SCHEMA DE SAÍDA ---\n{\n  \"output\": \"Análise concluída.\",\n  \"perfil\": \"**Parlamentar:** [nome]\\n\\n**Partido:** [sigla]\\n\\n**Perfil de Atuação:** [RÓTULO]\\n\\n**Resumo Executivo:** [FRASE CURTA: TOTAL + QTD + PAUTAS]\",\n  \"dossie\": \"[ANÁLISE DIRETA. FOCO EM RECEBEDORES E VALORES. MÁXIMO 2 PARÁGRAFOS.]\",\n  \"nivel_alerta\": \"Anomalia, Insight ou Monitorando\"\n}"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        448,
+        0
+      ],
+      "id": "05c4d159-9654-4fd5-a573-6ae85bbe28ab",
+      "name": "AI Agent",
+      "retryOnFail": true,
+      "waitBetweenTries": 5000,
+      "maxTries": 4
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.5-flash",
+        "options": {
+          "maxOutputTokens": 8192
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        400,
+        224
+      ],
+      "id": "5a65695e-f9d3-421c-9766-17c3db9bb00f",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "FmHd1AglYU1v8KWF",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $execution.id }}",
+        "contextWindowLength": 10
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.4,
+      "position": [
+        576,
+        224
+      ],
+      "id": "4f5aa977-50bc-431c-b912-755c83a7189f",
+      "name": "Simple Memory"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Puxar Emendas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get many rows1": {
+      "main": [
+        []
+      ]
+    },
+    "Limpar Dados": {
+      "main": [
+        [
+          {
+            "node": "RSS Read",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Puxar Emendas": {
+      "main": [
+        [
+          {
+            "node": "Limpar Dados",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model": {
+      "main": [
+        []
+      ]
+    },
+    "Descascador": {
+      "main": [
+        [
+          {
+            "node": "Avisar Lovable (Status: Concluído)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "RSS Read": {
+      "main": [
+        [
+          {
+            "node": "Limit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Limit": {
+      "main": [
+        [
+          {
+            "node": "Aggregate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate": {
+      "main": [
+        [
+          {
+            "node": "Formatar Notícias",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Formatar Notícias": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Descascador",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "cb168979-a611-41b5-a21e-c73e16cd3857",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "49617a6ceb14626dd3d4120d1290379699ec15b47c4c80aced9aedc894f23cf7"
+  },
+  "id": "YpQhOi1ZPmqSUY5l",
+  "tags": []
+}

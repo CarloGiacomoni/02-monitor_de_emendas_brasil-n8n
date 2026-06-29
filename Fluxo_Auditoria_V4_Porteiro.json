@@ -1,0 +1,185 @@
+{
+  "name": "Fluxo_Auditoria_V4_Porteiro",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "pegar-perfil",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -720,
+        -64
+      ],
+      "id": "f5ed93a9-4cc9-49d6-899a-08eb9e362b66",
+      "name": "Webhook",
+      "webhookId": "ee370fc3-dd9d-4a17-bcd6-7a9488031832"
+    },
+    {
+      "parameters": {
+        "tableId": "auditoria_jobs",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "job_id",
+              "fieldValue": "={{ $now.toMillis() }}"
+            },
+            {
+              "fieldId": "parlamentar",
+              "fieldValue": "={{ $json.body.parlamentar_selecionado }}"
+            },
+            {
+              "fieldId": "status",
+              "fieldValue": "processando"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -496,
+        -64
+      ],
+      "id": "db8cf42e-e48a-4a65-9484-9c304901040f",
+      "name": "Create a row",
+      "credentials": {
+        "supabaseApi": {
+          "id": "sA5uBrlH8qdKXmTA",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "YpQhOi1ZPmqSUY5l",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/YpQhOi1ZPmqSUY5l",
+          "cachedResultName": "Fluxo_Auditoria_V4_Cerebro"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "job_id": "={{ $('Create a row').item.json.job_id }}",
+            "parlamentar_selecionado": "={{ $('Create a row').item.json.parlamentar }}",
+            "mensagem_usuario": "={{ $('Webhook').item.json.body.mensagem_usuario }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "job_id",
+              "displayName": "job_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "parlamentar_selecionado",
+              "displayName": "parlamentar_selecionado",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "mensagem_usuario",
+              "displayName": "mensagem_usuario",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        -288,
+        -64
+      ],
+      "id": "2ebd14fd-7047-4ea3-8f73-32cfa5b030ad",
+      "name": "Call 'Fluxo_Auditoria_V4_Cerebro'"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json.resultado_ia }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        -112,
+        -64
+      ],
+      "id": "f69322a3-1360-47a3-b787-878bf541ed71",
+      "name": "Respond to Webhook"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Create a row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a row": {
+      "main": [
+        [
+          {
+            "node": "Call 'Fluxo_Auditoria_V4_Cerebro'",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call 'Fluxo_Auditoria_V4_Cerebro'": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "46ebc61c-972f-48dc-8899-6f18820a5e48",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "49617a6ceb14626dd3d4120d1290379699ec15b47c4c80aced9aedc894f23cf7"
+  },
+  "id": "GFVvusnUMYxUGhat",
+  "tags": []
+}
