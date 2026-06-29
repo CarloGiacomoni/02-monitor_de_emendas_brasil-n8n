@@ -1,31 +1,47 @@
-# 02 - Emenda Insight IA ⚙️ (Backend & Automação)
+# 02 - Monitor de Emendas Brasil ⚙️ (Engenharia de Dados & Orquestração)
 
-Este repositório contém o "motor" de processamento e orquestração do projeto **Emenda Insight IA**. Ele é o microsserviço backend responsável por conectar o front-end, o repositório de dados fatiados (Data Lake no OneDrive) e a API do Google Gemini, rodando sob severas restrições de infraestrutura em nuvem.
+Este repositório contém a arquitetura de backend e o pipeline de dados do projeto **Monitor de Emendas Brasil**. Construído utilizando a plataforma **n8n**, este microsserviço atua como o motor central de orquestração, responsável pelos processos de Extração, Transformação e Carga (ETL), além da integração com modelos de Inteligência Artificial para análise contínua dos repasses governamentais.
 
-👉 **Veja a Interface de Usuário (Front-end) aqui:** [Repositório 01 - Front-end Lovable](https://github.com/CarloGiacomoni/01-emenda-insight-ia-Lovable)
+👉 **Veja a Interface de Usuário (Front-end) aqui:** [Repositório 01 - Monitor de Emendas (UI)](https://github.com/CarloGiacomoni/01-monitor_de_emendas_brasil-Lovable)
 
-## 🏗️ Visão Geral da Arquitetura (n8n)
+---
 
-O backend foi projetado sob os princípios de microsserviços. O fluxo foi desenhado de forma "stackable" (empilhada) no n8n para isolar as fases lógicas da esteira de dados:
+## 🏗️ Estado Atual: Desacoplamento e Processamento Assíncrono (V2)
 
-![Arquitetura empilhada do n8n](Fluxo-n8n.jpeg)
+Para suportar o tempo de processamento inerente aos Modelos de Linguagem (LLMs) e evitar erros de *timeout* no front-end, a arquitetura atual é assíncrona e orientada a eventos, dividida em dois microsserviços interligados:
 
-* **Linha 1 — Ingestão:** Recebimento da requisição via Webhook e varredura de metadados no Data Lake (OneDrive).
-* **Linha 2 — ETL:** Isolamento cirúrgico de **estritamente 1 arquivo CSV** via Filtro Inteligente (ignorando extensões e caracteres especiais via `contains`) e processamento de download.
-* **Linha 3 — Inteligência & Output:** Processamento Cognitivo (Google Gemini 1.5), higienização de saída via JavaScript e devolutiva estruturada ao front-end.
+### 1. Fluxo de Recepção ("O Porteiro" / API Gateway)
+Responsável por garantir alta disponibilidade e resposta em milissegundos para a interface de usuário (UI).
+* **Ingestão (Webhook):** Recebe o payload via POST do front-end.
+* **Controle de Estado:** Registra imediatamente a solicitação no banco de dados (Supabase) com status pendente.
+* **Gatilho Assíncrono:** Invoca o "Fluxo Cérebro" em *background* sem aguardar sua conclusão.
+* **Liberação:** Retorna um status HTTP 200 OK para o front-end imediatamente.
 
-## 🛡️ O Desafio de Infraestrutura: Superando o OOM Killer
+<img width="1649" height="774" alt="Fluxo_v4_p" src="https://github.com/user-attachments/assets/70a74e77-c345-4399-a8f3-c50c561e1386" />
 
-O maior desafio técnico deste projeto foi rodar um pipeline de IA e processamento de dados massivos em uma VPS do Google Cloud com apenas **1 GB de Memória RAM**. A estratégia para evitar o travamento do servidor Linux (*Out of Memory Killer*) baseou-se em:
 
-1.  **Fatiamento Granular (Python):** A base central (~60MB / 295.000 linhas) foi fatiada em 1.652 arquivos CSV individuais (um por parlamentar). O n8n baixa apenas a fatia exata requisitada (poucos KB), protegendo a RAM.
-2.  **Memória Virtual:** A VPS foi configurada com 2 GB de memória Swap para absorver picos de processamento do Docker com segurança.
+### 2. Fluxo de Processamento Cognitivo ("O Cérebro" / Data Worker)
+Motor pesado de ETL e inteligência artificial que roda em segundo plano.
+* **Extração e Limpeza:** Recupera os metadados brutos do banco de dados e aplica higienização via código customizado.
+* **Enriquecimento de Contexto:** Consulta feeds RSS externos em tempo real, limitando e agregando informações para alimentar a IA com notícias recentes.
+* **Processamento de IA:** Orquestra o modelo Google Gemini Chat com injeção de memória para análise investigativa e geração de resumos em linguagem cidadã.
+* **Pós-Processamento e Callback:** Higieniza o output bruto do LLM (removendo marcações indesejadas) e executa o *Update* no banco de dados, sinalizando a conclusão para o front-end.
 
-## 🛟 Lógica de Contingência: O "Airbag" em JavaScript
+<img width="1668" height="772" alt="Fluxo_v4_c" src="https://github.com/user-attachments/assets/4bc75d74-7b40-4f23-9281-02b2446ab86c" />
 
-Para contornar a natureza probabilística das LLMs (que ocasionalmente ignoram prompts e respondem com texto livre em vez do JSON obrigatório), implementou-se um "Airbag Lógico" no nó de JavaScript. 
 
-Ele atua como um extrator cirúrgico e um mecanismo de contingência à prova de falhas:
+---
+
+## 🚀 Evolução Arquitetural e Desafios Superados (V1 para V2)
+
+A arquitetura atual é fruto de iterações contínuas para superar limites de infraestrutura e comportamento de IA.
+
+### 1. Superando Limites de Hardware (OOM Killer)
+Nas fases iniciais (V1), o maior desafio técnico foi rodar o pipeline massivo em uma VPS do Google Cloud com apenas **1 GB de Memória RAM**. 
+* **A Solução:** A base central de dados (~295.000 linhas) foi fatiada em 1.652 arquivos CSV individuais no OneDrive. O n8n baixava apenas a fatia exata requisitada, protegendo a RAM. A VPS também recebeu 2 GB de memória Swap. *Na V2, essa barreira foi superada migrando os dados para o Supabase (PostgreSQL em nuvem).*
+
+### 2. Resiliência Cognitiva: O "Airbag" em JavaScript
+Para contornar a natureza probabilística das LLMs (que ocasionalmente ignoram prompts e respondem com texto livre em vez do JSON obrigatório), desenvolvi um "Airbag Lógico" via nó de JavaScript. Ele atua como extrator cirúrgico e contingência à prova de falhas:
 
 ```javascript
 // Captura a saída bruta gerada pela IA
@@ -54,5 +70,8 @@ try {
 return [{ json: objetoJson }];
 ```
 
-### 📂 Como Importar o Fluxo
-Este repositório contém o arquivo (fluxo_n8n_emenda_insight.json). Importe-o diretamente para o seu editor n8n para replicar a arquitetura. É necessário reconfigurar as credenciais OAuth2 do Microsoft OneDrive e a API Key do Google Gemini.
+
+---
+
+## 📂 Como Importar os Fluxos
+Este repositório contém os arquivos JSON dos fluxos. Importe-os diretamente para o seu editor n8n para replicar a arquitetura. É necessário configurar as credenciais do Supabase e a API Key do Google Gemini.
